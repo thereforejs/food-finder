@@ -1,0 +1,55 @@
+{
+  "name": "@thereforejs/food-finder",
+  "version": "0.0.0",
+  "description": "Find foods of @thereforejs/foods by what people type: search, aliases and language rules, loaded per language",
+  "keywords": [
+    "bls",
+    "food-database",
+    "food-search",
+    "fuzzy-search",
+    "nutrition",
+    "search"
+  ],
+  "homepage": "https://github.com/thereforejs/food-finder#readme",
+  "bugs": {
+    "url": "https://github.com/thereforejs/food-finder/issues"
+  },
+  "license": "MIT",
+  "author": "Florian Heuberger",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thereforejs/food-finder.git"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "vp pack",
+    "dev": "vp pack --watch",
+    "test": "vp test",
+    "check": "vp check",
+    "prepack": "vp check && vp test run && vp pack",
+    "prepare": "vp config"
+  },
+  "devDependencies": {
+    "@thereforejs/foods": "^0.0.1",
+    "@types/node": "^26.6.5",
+    "fast-check": "^4.10.2",
+    "typescript": "^7.0.2",
+    "vite-plus": "catalog:"
+  },
+  "peerDependencies": {
+    "@thereforejs/foods": "^0.0.1"
+  },
+  "packageManager": "pnpm@12.15.0"
+}

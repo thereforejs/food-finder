@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: en-US
+
+reviews:
+  profile: assertive
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  sequence_diagrams: false
+  in_progress_fortune: false
+  auto_review:
+    enabled: true
+    drafts: false
+    # Release PRs from uppt only carry the version and the changelog.
+    ignore_usernames:
+      - github-actions[bot]
+  path_filters:
+    - "!pnpm-lock.yaml"
+    - "!dist/**"
+    - "!docs/**"
+  path_instructions:
+    - path: "**"
+      instructions: |
+        This package finds foods of @thereforejs/foods by what people type: the search, aliases and
+        language rules. foods ships only the names; nothing of the search belongs there. SPEC.md is
+        the source of truth for every rule; flag code that disagrees with it.
+        - No em dashes or en dashes anywhere (code, comments, docs); a plain hyphen only.
+        - Comments explain why, not what; few and short.
+    - path: "src/**/*.ts"
+      instructions: |
+        - Lazy loading must not get worse: the finder never imports a names index of
+          @thereforejs/foods itself; the app passes it in. Flag any value import of
+          `@thereforejs/foods/names/*`.
+        - One entry point per language. No module may hold a collection of all languages; a map like
+          `{ de, en }` pulls every language into every bundle. Named exports only.
+        - No `any`, no `as never`, no dead guards. Imports from vite-plus, never from vite or vitest.
+    - path: "tests/**/*.ts"
+      instructions: |
+        Every rule needs a test that fails without it. Expected results come from real food names
+        and are worked out by hand, never copied from the search's own output. Property tests use
+        fast-check. Do not suggest weakening an assertion to make a test pass.
+
+chat:
+  auto_reply: true

@@ -1,0 +1,55 @@
+import type { Language } from "./language.ts";
+import { MATCHES, type Match, rankOf, spell } from "./spelling.ts";
+import { variants } from "./variants.ts";
+import { words } from "./words.ts";
+
+export type { Match };
+
+export type Hit = { code: string; name: string; match: Match };
+
+export type SearchOptions = {
+  /** At most this many hits. */
+  limit?: number;
+  /** Only foods of this main group, the first letter of the code. */
+  group?: string;
+};
+
+export type Finder = {
+  /**
+   * The foods whose name matches `query`, best first. It proposes; picking one stays with a human.
+   * Spaces never matter: "Weizenmehl Typ 550" is "Weizen Mehl, Type 550".
+   */
+  search: (query: string, options?: SearchOptions) => Hit[];
+};
+
+/** Reads every name once; every search reuses it. `names` is code to name. */
+export function createFinder(names: Record<string, string>, language: Language): Finder {
+  const foods = Object.entries(names).map(([code, name]) => ({
+    code,
+    name,
+    spellings: variants(name).map((variant) => spell(words(variant, language))),
+  }));
+
+  function search(query: string, options: SearchOptions = {}): Hit[] {
+    const asked = words(query, language);
+    const hits: (Hit & { rank: number; length: number })[] = [];
+    for (const { code, name, spellings } of foods) {
+      if (options.group && !code.startsWith(options.group)) continue;
+      const found = spellings
+        .map((spelled) => ({ rank: rankOf(asked, spelled), length: spelled.whole.length }))
+        .filter(({ rank }) => rank >= 0)
+        .sort((a, b) => a.rank - b.rank || a.length - b.length)[0];
+      if (found) hits.push({ code, name, match: MATCHES[found.rank]!, ...found });
+    }
+    hits.sort(
+      (a, b) =>
+        a.rank - b.rank ||
+        a.length - b.length ||
+        a.name.localeCompare(b.name, language.locale) ||
+        a.code.localeCompare(b.code),
+    );
+    return hits.slice(0, options.limit).map(({ code, name, match }) => ({ code, name, match }));
+  }
+
+  return { search };
+}

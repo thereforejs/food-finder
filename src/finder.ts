@@ -1,5 +1,6 @@
 import { heads } from "./compounds.ts";
 import type { Language } from "./language.ts";
+import { type Meanings, readMeanings } from "./meanings.ts";
 import { ask, MATCHES, type Match, partialOf, rankOf, type Spelling, spell } from "./spelling.ts";
 import { variants } from "./variants.ts";
 import { words } from "./words.ts";
@@ -10,6 +11,8 @@ export type Hit = {
   code: string;
   name: string;
   match: Match;
+  /** Found through a meaning, not the name: "Butter" is "Süßrahmbutter". */
+  meant: boolean;
   /** The words of the query, as read, that no word of the name holds (`partial` only). */
   missed: string[];
 };
@@ -29,14 +32,30 @@ export type Finder = {
   search: (query: string, options?: SearchOptions) => Hit[];
 };
 
+export type FinderOptions = {
+  /** What everyday words mean, the first source winning a word: `[bakery, meanings]`. */
+  meanings?: Meanings[];
+};
+
 /** Reads every name once; every search reuses it. `names` is code to name. */
-export function createFinder(names: Record<string, string>, language: Language): Finder {
+export function createFinder(
+  names: Record<string, string>,
+  language: Language,
+  options: FinderOptions = {},
+): Finder {
   const foods = Object.entries(names).map(([code, name]) => ({
     code,
     name,
     spellings: variants(name).map((variant) => spell(words(variant, language))),
   }));
+  // Read before the meanings join: compounds are read from the names alone.
   const endsOf = language.compounds && compoundsOf(foods, language.compounds);
+  const meant = readMeanings(options.meanings ?? [], language);
+  for (const food of foods) {
+    for (const { words: read, order } of meant.get(food.code) ?? []) {
+      food.spellings.push({ ...spell(read), meant: order });
+    }
+  }
 
   function search(query: string, options: SearchOptions = {}): Hit[] {
     const asked = words(query, language);
@@ -61,9 +80,13 @@ export function createFinder(names: Record<string, string>, language: Language):
         a.name.localeCompare(b.name, language.locale) ||
         a.code.localeCompare(b.code),
     );
-    return hits
-      .slice(0, options.limit)
-      .map(({ code, name, rank, missed }) => ({ code, name, match: MATCHES[rank]!, missed }));
+    return hits.slice(0, options.limit).map(({ code, name, rank, meant, missed }) => ({
+      code,
+      name,
+      match: MATCHES[rank]!,
+      meant: meant !== NOT_MEANT,
+      missed,
+    }));
   }
 
   return { search };
@@ -71,21 +94,24 @@ export function createFinder(names: Record<string, string>, language: Language):
 
 const PARTIAL = MATCHES.indexOf("partial");
 
-type Found = { rank: number; covered: number; missed: string[]; length: number };
+const NOT_MEANT = Infinity;
+
+type Found = { rank: number; covered: number; missed: string[]; meant: number; length: number };
 
 const better = (a: Found, b: Found) =>
-  a.rank - b.rank || b.covered - a.covered || a.length - b.length;
+  a.rank - b.rank || b.covered - a.covered || a.meant - b.meant || a.length - b.length;
 
 // Each food once, by its best spelling.
 function collect(
   foods: { code: string; name: string; spellings: Spelling[] }[],
-  read: (spelled: Spelling) => Omit<Found, "length"> | undefined,
+  read: (spelled: Spelling) => Omit<Found, "meant" | "length"> | undefined,
 ): (Found & { code: string; name: string })[] {
   return foods.flatMap(({ code, name, spellings }) => {
     const found = spellings
       .flatMap((spelled) => {
         const result = read(spelled);
-        return result ? [{ ...result, length: spelled.whole.length }] : [];
+        if (!result) return [];
+        return [{ ...result, meant: spelled.meant ?? NOT_MEANT, length: spelled.whole.length }];
       })
       .sort(better)[0];
     return found ? [{ code, name, ...found }] : [];

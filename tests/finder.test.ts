@@ -57,7 +57,7 @@ describe("exact", () => {
 
   test("a hit names the food as written", () => {
     expect(finder.search("weizenbrot weissbrot")).toEqual([
-      { code: "B311000", name: "Weizenbrot/Weißbrot", match: "exact", missed: [] },
+      { code: "B311000", name: "Weizenbrot/Weißbrot", match: "exact", meant: false, missed: [] },
     ]);
   });
 
@@ -84,7 +84,7 @@ describe("alternatives (the BLS writes synonyms with a slash)", () => {
     const name = "Kaffeelikör/Kakaolikör/Schokoladenlikör, cremig, mit Milch/Sahne";
     const liqueur = createFinder({ P5A5000: name }, german);
     expect(liqueur.search("Schokoladenlikör cremig mit Sahne")).toEqual([
-      { code: "P5A5000", name, match: "exact", missed: [] },
+      { code: "P5A5000", name, match: "exact", meant: false, missed: [] },
     ]);
   });
 
@@ -174,6 +174,7 @@ describe("partial (raw material names: some words are in no name)", () => {
       code: "C214200",
       name: "Weizen Mehl, Type 550",
       match: "partial",
+      meant: false,
       missed: ["sack", "lose"],
     });
     expect(first("Weizenmehl T550 25 kg Sack")).toMatchObject({
@@ -206,6 +207,60 @@ describe("partial (raw material names: some words are in no name)", () => {
       C213200: "prefix",
     });
     expect(finder.search("Kartoffelsalat Sack")).toEqual([]);
+  });
+});
+
+describe("meanings (what people mean by an everyday word)", () => {
+  const meant = createFinder(names, german, {
+    meanings: [{ Butter: ["Q630000"], Milch: ["M111300", "M114300"] }],
+  });
+  const found = (query: string) =>
+    meant.search(query).map(({ code, match, meant }) => `${code} ${match}${meant ? " meant" : ""}`);
+
+  test("Butter means Süßrahmbutter: it leads, the rest follows as before", () => {
+    expect(found("Butter")).toEqual([
+      "Q630000 exact meant",
+      "Q6A4000 prefix",
+      "X951133 words",
+      "X434442 words",
+      "Q530000 compound",
+    ]);
+  });
+
+  test("the codes of a meaning in their order, not the alphabet's", () => {
+    expect(found("Milch").slice(0, 2)).toEqual(["M111300 exact meant", "M114300 exact meant"]);
+  });
+
+  test("a meaning wins over a name that says the same", () => {
+    const plain = createFinder({ A: "Butter", Q630000: "Süßrahmbutter" }, german, {
+      meanings: [{ Butter: ["Q630000"] }],
+    });
+    expect(plain.search("Butter").map((hit) => hit.code)).toEqual(["Q630000", "A"]);
+  });
+
+  test("a meaning goes through every tier, partial too", () => {
+    expect(found("Butter 82 % Fett")[0]).toBe("Q630000 partial meant");
+    expect(found("BUTTER")[0]).toBe("Q630000 exact meant");
+  });
+
+  test("the first source wins a word, the others keep theirs", () => {
+    const bakery = createFinder(names, german, {
+      meanings: [{ Mehl: ["C214200"] }, { Butter: ["Q630000"], Mehl: ["C214100"] }],
+    });
+    expect(bakery.search("Mehl")[0]).toMatchObject({ code: "C214200", meant: true });
+    expect(bakery.search("Mehl").find((hit) => hit.code === "C214100")?.meant).toBe(false);
+    expect(bakery.search("Butter")[0]).toMatchObject({ code: "Q630000", meant: true });
+  });
+
+  test("a code the names do not hold is ignored", () => {
+    const missing = createFinder(names, german, { meanings: [{ Butter: ["X999999"] }] });
+    expect(missing.search("Butter")).toEqual(finder.search("Butter"));
+  });
+
+  test("meanings never change how compounds are read", () => {
+    // "Rei" as a known word would read "Hühnerei" as "Hühne-rei", and Ei would not find it.
+    const odd = createFinder(names, german, { meanings: [{ Rei: ["Q6A4000"] }] });
+    expect(odd.search("Ei").map((hit) => hit.code)).toContain("E111100");
   });
 });
 

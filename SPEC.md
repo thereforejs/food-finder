@@ -134,6 +134,7 @@ export const meanings = {
 - Several sources stack, the first wins: a bakery passes `[bakery, meanings]`, where its `Mehl` is
   Type 550 and ours is Type 405.
 - Codes the names do not hold are ignored; an application may pass a filtered index.
+- Meanings never change how compounds are read: those are read from the names alone.
 - Tests: every code of our files exists in the installed foods, keys are sorted, no two keys read the
   same.
 

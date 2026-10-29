@@ -6,6 +6,8 @@ export type Spelling = {
   spans: Set<string>;
   /** `spans` and what each compound ends with, read on the first query that needs them. */
   compounds?: Set<string>;
+  /** A word of a meaning, not the name: the place of the food in it. */
+  meant?: number;
 };
 
 /**

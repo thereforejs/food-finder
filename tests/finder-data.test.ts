@@ -58,3 +58,40 @@ test("compounds only add hits after all others, never drop or move one", () => {
     { numRuns: 30 },
   );
 });
+
+describe("raw material names on the BLS names", () => {
+  test.each([
+    ["Weizenmehl Type 550 Sack lose", "C214200", "Weizen Mehl, Type 550"],
+    ["Weizenmehl T550 25 kg Sack", "C214200", "Weizen Mehl, Type 550"],
+    ["Rindergelatine", "R468000", "Gelatine/Speisegelatine"],
+    ["modifizierte Kartoffelstärke", "K230000", "Kartoffelstärke (Kartoffelmehl)"],
+  ])("%s finds %s %s first", (query, code) => {
+    expect(codes(query)[0]).toBe(code);
+  });
+
+  // The last part of a query word counts only when it is at least half of it.
+  test.each([
+    ["Milcheiweiß", "W245000", "Lyoner weiß: no Milchei-weiß"],
+    ["Sauerteig", "D421000", "Sandmasse/Sandteig, roh"],
+    ["Hühnervolleipulver", "R421100", "Backpulver"],
+  ])("%s never finds %s %s", (query, code) => {
+    expect(codes(query)).not.toContain(code);
+  });
+});
+
+test("partial hits come only when no name holds the whole query", () => {
+  const vocabulary = [...new Set(Object.values(names).flatMap((name) => words(name, german)))];
+  fc.assert(
+    fc.property(
+      fc.constantFrom(...vocabulary.sort()),
+      fc.string({ minLength: 1 }),
+      (word, other) => {
+        expect(finder.search(word).some((hit) => hit.match === "partial")).toBe(false);
+        const hits = finder.search(`${word} ${other}`);
+        const partial = hits.filter((hit) => hit.match === "partial");
+        expect(partial.length === 0 || partial.length === hits.length).toBe(true);
+      },
+    ),
+    { numRuns: 30 },
+  );
+});

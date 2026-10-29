@@ -9,10 +9,11 @@ export type Spelling = {
 };
 
 /**
- * How a hit matched the query, best first: the whole name, its start, its words, or its words with
- * a word of the query as the last part of a compound ("Butter" in "Süßrahmbutter").
+ * How a hit matched the query, best first: the whole name, its start, its words, its words with a
+ * word of the query as the last part of a compound ("Butter" in "Süßrahmbutter"), or some words of
+ * the query only.
  */
-export const MATCHES = ["exact", "prefix", "words", "compound"] as const;
+export const MATCHES = ["exact", "prefix", "words", "compound", "partial"] as const;
 
 export type Match = (typeof MATCHES)[number];
 
@@ -46,8 +47,62 @@ export function rankOf(
   if (name.ends.has(wanted.length) && name.whole.startsWith(wanted)) return 1;
   if (covers(asked, name.spans)) return 2;
   if (!endsOf) return -1;
+  return covers(asked, piecesOf(name, endsOf)) ? 3 : -1;
+}
+
+export type Partial = { covered: number; missed: string[] };
+
+/** A query read once for `partialOf`: every run of its words joined, and what each word ends with. */
+export type Asked = { words: string[]; runs: string[][]; tails: string[][] };
+
+export function ask(words: string[], endsOf?: (word: string) => string[]): Asked {
+  return {
+    words,
+    runs: words.map((_, end) => words.map((_, start) => words.slice(start, end + 1).join(""))),
+    tails: words.map((word) => endsOf?.(word) ?? []),
+  };
+}
+
+/**
+ * How much of the query a name holds when it does not hold all of it: the letters found, and the
+ * words missed. A word of the query may be found by its last part: "Rindergelatine" is a
+ * "Gelatine" with "rinder" missed. Longer words carry more meaning, so letters count, not words.
+ */
+export function partialOf(
+  asked: Asked,
+  name: Spelling,
+  endsOf?: (word: string) => string[],
+): Partial | undefined {
+  const pieces = piecesOf(name, endsOf);
+  const best: Partial[] = [{ covered: 0, missed: [] }];
+  for (let end = 1; end <= asked.words.length; end++) {
+    const word = asked.words[end - 1]!;
+    const before = best[end - 1]!;
+    const options = [{ covered: before.covered, missed: [...before.missed, word] }];
+    for (let start = 0; start < end; start++) {
+      const run = asked.runs[end - 1]![start]!;
+      if (!pieces.has(run)) continue;
+      options.push({ covered: best[start]!.covered + run.length, missed: best[start]!.missed });
+    }
+    for (const tail of asked.tails[end - 1]!) {
+      // A short last part misreads too often: "Milcheiweiß" is no "Milchei-weiß", "Sauerteig" no
+      // "Sandteig". What cannot be told apart stays unfound.
+      if (!pieces.has(tail) || tail.length * 2 < word.length) continue;
+      const stem = word.slice(0, -tail.length);
+      options.push({ covered: before.covered + tail.length, missed: [...before.missed, stem] });
+    }
+    best[end] = options.reduce((a, b) => (b.covered > a.covered ? b : a));
+  }
+  const found = best[asked.words.length]!;
+  return found.covered > 0 ? found : undefined;
+}
+
+// What a word of the query may be in this name: its runs of words, and with compounds what each
+// word ends with.
+function piecesOf(name: Spelling, endsOf?: (word: string) => string[]): Set<string> {
+  if (!endsOf) return name.spans;
   name.compounds ??= new Set([...name.spans, ...name.words.flatMap((word) => endsOf(word))]);
-  return covers(asked, name.compounds) ? 3 : -1;
+  return name.compounds;
 }
 
 // Every word of the query, alone or joined with its neighbours, is one or more whole words of the

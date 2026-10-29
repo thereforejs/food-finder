@@ -17,6 +17,9 @@ describe("German", () => {
     ["Milch 3.5% Fett", ["milch", "3,5", "%", "fett"]],
     ["mind. 45 % Fett i. Tr.", ["mind", "45", "%", "fett", "i", "tr"]],
     ["  ", []],
+    // Raw materials write the type into one word: "T550" is "T" and "550".
+    ["Weizenmehl T550", ["weizenmehl", "t", "550"]],
+    ["25kg", ["25", "kg"]],
   ])("%s", (text, expected) => {
     expect(words(text, german)).toEqual(expected);
   });

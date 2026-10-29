@@ -29,6 +29,9 @@ const names = {
   Q6A4000: "Butter gesalzen",
   Q530000: "Kakaobutter",
   E111100: "Hühnerei roh",
+  R468000: "Gelatine/Speisegelatine",
+  K230000: "Kartoffelstärke (Kartoffelmehl)",
+  S711000: "Kakaopulver schwach entölt",
   X951133: "Grießbrei gesüßt, mit Butter und Ei",
 };
 const finder = createFinder(names, german);
@@ -54,7 +57,7 @@ describe("exact", () => {
 
   test("a hit names the food as written", () => {
     expect(finder.search("weizenbrot weissbrot")).toEqual([
-      { code: "B311000", name: "Weizenbrot/Weißbrot", match: "exact" },
+      { code: "B311000", name: "Weizenbrot/Weißbrot", match: "exact", missed: [] },
     ]);
   });
 
@@ -81,7 +84,7 @@ describe("alternatives (the BLS writes synonyms with a slash)", () => {
     const name = "Kaffeelikör/Kakaolikör/Schokoladenlikör, cremig, mit Milch/Sahne";
     const liqueur = createFinder({ P5A5000: name }, german);
     expect(liqueur.search("Schokoladenlikör cremig mit Sahne")).toEqual([
-      { code: "P5A5000", name, match: "exact" },
+      { code: "P5A5000", name, match: "exact", missed: [] },
     ]);
   });
 
@@ -163,6 +166,49 @@ describe("compound (German: the last part names the kind)", () => {
   });
 });
 
+describe("partial (raw material names: some words are in no name)", () => {
+  const first = (query: string) => finder.search(query)[0];
+
+  test("the words found lead, the rest is missed", () => {
+    expect(first("Weizenmehl Type 550 Sack lose")).toEqual({
+      code: "C214200",
+      name: "Weizen Mehl, Type 550",
+      match: "partial",
+      missed: ["sack", "lose"],
+    });
+    expect(first("Weizenmehl T550 25 kg Sack")).toMatchObject({
+      code: "C214200",
+      missed: ["t", "25", "kg", "sack"],
+    });
+    expect(first("modifizierte Kartoffelstärke")).toMatchObject({
+      code: "K230000",
+      missed: ["modifizierte"],
+    });
+  });
+
+  test("more of the query found ranks first: Weizenmehl and 550 before Weizenmehl alone", () => {
+    expect(codes("Weizenmehl 550 Sack").slice(0, 2)).toEqual(["C214200", "C214100"]);
+  });
+
+  test("a compound of the query is read by its last part", () => {
+    expect(first("Rindergelatine")).toMatchObject({
+      code: "R468000",
+      match: "partial",
+      missed: ["rinder"],
+    });
+  });
+
+  test("only when no name holds the whole query", () => {
+    expect(matched("Weizenmehl")).toEqual({
+      C214100: "prefix",
+      C214200: "prefix",
+      C213100: "prefix",
+      C213200: "prefix",
+    });
+    expect(finder.search("Kartoffelsalat Sack")).toEqual([]);
+  });
+});
+
 describe("languages", () => {
   const finderEn = createFinder(
     {
@@ -178,6 +224,14 @@ describe("languages", () => {
 
   test("English is read without accents", () => {
     expect(finderEn.search("cream eclairs").map((hit) => hit.code)).toEqual(["D3A1000"]);
+  });
+
+  test("English finds partial hits by whole words only", () => {
+    expect(finderEn.search("sweet cream butter 82 %")[0]).toMatchObject({
+      code: "Q630000",
+      match: "partial",
+      missed: ["82", "%"],
+    });
   });
 
   test("English writes the kind as its own word: buttermilk is no milk", () => {

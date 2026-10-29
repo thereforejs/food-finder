@@ -59,7 +59,7 @@ finder.search("Butter", { limit: 5 });
 - `finder.search(query, { limit?, group? })`: the hits, best first. `group` keeps the codes starting
   with it (the BLS main group).
 - A hit: `code`, `name`, `match` (the tier, section 4), `meant` (it came through a meaning), `missed`
-  (the query words no name word covers, section 4).
+  (the query words, as read, that the name does not hold; `partial` only, section 4).
 - In Vue or Pinia, hold the finder with `markRaw` or `shallowRef`: it holds thousands of prepared
   names that must not become reactive.
 
@@ -82,11 +82,20 @@ Tiers, best first. Spaces never matter ("Weizenmehl Typ 550" is "Weizen Mehl, Ty
 | `partial`  | as `compound`, but some query words are covered by no name word; they are in `missed`             | "Weizenmehl T550 25 kg Sack" finds "Weizen Mehl, Type 550"             |
 
 `partial` serves raw material names: packaging, fat content, suppliers and processing are rarely in a
-BLS name. A query word that covers nothing anywhere costs nothing; a hit with fewer missed words
-ranks first.
+BLS name ("Weizenmehl Type 550 Sack lose"). It is a fallback: it runs only when no name holds the
+whole query, so a search that finds something never changes. In it:
 
-Ranking: tier, then fewer `missed`, then meant before not (in the order of its meaning), then the
-shorter name, then `localeCompare` in the language of the finder, then the code.
+- A word of the query may be found by its last part in languages with compounds: "Rindergelatine"
+  finds "Gelatine/Speisegelatine" with `missed: ["rinder"]`. The last part must be at least half
+  the word: "Milcheiweiß" is no "Milchei-weiß", "Sauerteig" no "Sandteig". What cannot be told
+  apart stays unfound; no exception for single words.
+- Letters and digits part ("T550" is "t" and "550"), so the type of a flour still counts.
+- The more letters of the query a name holds, the better: "Weizenmehl" and "550" before "Weizenmehl"
+  alone. Letters, not words: a longer word carries more meaning than "%" or "25".
+
+Ranking: tier, then more letters of the query found (`partial` only), then meant before not (in the
+order of its meaning), then the shorter name, then `localeCompare` in the language of the finder,
+then the code.
 
 ---
 
@@ -151,9 +160,10 @@ The same probe on this package's build, recorded here with its date:
 2. All 7,108 names of the installed foods: the compound readings, the cases of the old
    `search-data.test.ts`.
 3. Raw material names with their expected code, worked out by hand. From the bakery application once
-   it has real ones.
+   it has real ones. Real supplier and article data stays out of the repo; cases are written by hand.
 4. Properties (fast-check): words read back as themselves; a tier never ranks below a worse one;
-   compounds and partial hits only append after the better tiers.
+   compounds only append after the better tiers; partial hits come only when no name holds the
+   whole query.
 5. Meanings: section 6.
 6. The bundle probe of section 7.
 
@@ -166,7 +176,11 @@ The same probe on this package's build, recorded here with its date:
   Pinia store holds it (2026-10-29). Replaces the per-index `WeakMap` of the old search.
 - Meanings, not aliases: the problem is what an everyday word means, not how a name is spelled
   (2026-10-29). Their own entry point per language, maintained as data, stacked as a list.
-- `partial` for raw material names (2026-10-29).
+- `partial` for raw material names, a fallback only when no name holds the whole query: reading a
+  query word by its last part everywhere would make "Roggenmehl" find "Roggen Vollkornmehl"
+  (2026-10-29).
+- A compound of the query is read by its last part in `partial` ("Rindergelatine" is a "Gelatine"),
+  for every language with compounds (2026-10-29).
 
 ---
 

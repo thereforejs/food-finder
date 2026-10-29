@@ -1,12 +1,18 @@
 import { heads } from "./compounds.ts";
 import type { Language } from "./language.ts";
-import { MATCHES, type Match, rankOf, type Spelling, spell } from "./spelling.ts";
+import { ask, MATCHES, type Match, partialOf, rankOf, type Spelling, spell } from "./spelling.ts";
 import { variants } from "./variants.ts";
 import { words } from "./words.ts";
 
 export type { Match };
 
-export type Hit = { code: string; name: string; match: Match };
+export type Hit = {
+  code: string;
+  name: string;
+  match: Match;
+  /** The words of the query, as read, that no word of the name holds (`partial` only). */
+  missed: string[];
+};
 
 export type SearchOptions = {
   /** At most this many hits. */
@@ -34,26 +40,56 @@ export function createFinder(names: Record<string, string>, language: Language):
 
   function search(query: string, options: SearchOptions = {}): Hit[] {
     const asked = words(query, language);
-    const hits: (Hit & { rank: number; length: number })[] = [];
-    for (const { code, name, spellings } of foods) {
-      if (options.group && !code.startsWith(options.group)) continue;
-      const found = spellings
-        .map((spelled) => ({ rank: rankOf(asked, spelled, endsOf), length: spelled.whole.length }))
-        .filter(({ rank }) => rank >= 0)
-        .sort((a, b) => a.rank - b.rank || a.length - b.length)[0];
-      if (found) hits.push({ code, name, match: MATCHES[found.rank]!, ...found });
+    const wanted = asked.join("").length;
+    const scope = foods.filter(({ code }) => !options.group || code.startsWith(options.group));
+    let hits = collect(scope, (spelled) => {
+      const rank = rankOf(asked, spelled, endsOf);
+      return rank < 0 ? undefined : { rank, covered: wanted, missed: [] };
+    });
+    // Only when no name holds the whole query: a raw material name carries words no name has
+    // ("Sack", "lose"), and a search that finds something stays as it is.
+    if (hits.length === 0) {
+      const read = ask(asked, endsOf);
+      hits = collect(scope, (spelled) => {
+        const partial = partialOf(read, spelled, endsOf);
+        return partial && { rank: PARTIAL, ...partial };
+      });
     }
     hits.sort(
       (a, b) =>
-        a.rank - b.rank ||
-        a.length - b.length ||
+        better(a, b) ||
         a.name.localeCompare(b.name, language.locale) ||
         a.code.localeCompare(b.code),
     );
-    return hits.slice(0, options.limit).map(({ code, name, match }) => ({ code, name, match }));
+    return hits
+      .slice(0, options.limit)
+      .map(({ code, name, rank, missed }) => ({ code, name, match: MATCHES[rank]!, missed }));
   }
 
   return { search };
+}
+
+const PARTIAL = MATCHES.indexOf("partial");
+
+type Found = { rank: number; covered: number; missed: string[]; length: number };
+
+const better = (a: Found, b: Found) =>
+  a.rank - b.rank || b.covered - a.covered || a.length - b.length;
+
+// Each food once, by its best spelling.
+function collect(
+  foods: { code: string; name: string; spellings: Spelling[] }[],
+  read: (spelled: Spelling) => Omit<Found, "length"> | undefined,
+): (Found & { code: string; name: string })[] {
+  return foods.flatMap(({ code, name, spellings }) => {
+    const found = spellings
+      .flatMap((spelled) => {
+        const result = read(spelled);
+        return result ? [{ ...result, length: spelled.whole.length }] : [];
+      })
+      .sort(better)[0];
+    return found ? [{ code, name, ...found }] : [];
+  });
 }
 
 // A compound ends with a word that stands alone in some name: "Grießbrei" is a "Brei", never an "Ei".

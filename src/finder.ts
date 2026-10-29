@@ -1,5 +1,6 @@
+import { heads } from "./compounds.ts";
 import type { Language } from "./language.ts";
-import { MATCHES, type Match, rankOf, spell } from "./spelling.ts";
+import { MATCHES, type Match, rankOf, type Spelling, spell } from "./spelling.ts";
 import { variants } from "./variants.ts";
 import { words } from "./words.ts";
 
@@ -29,6 +30,7 @@ export function createFinder(names: Record<string, string>, language: Language):
     name,
     spellings: variants(name).map((variant) => spell(words(variant, language))),
   }));
+  const endsOf = language.compounds && compoundsOf(foods, language.compounds);
 
   function search(query: string, options: SearchOptions = {}): Hit[] {
     const asked = words(query, language);
@@ -36,7 +38,7 @@ export function createFinder(names: Record<string, string>, language: Language):
     for (const { code, name, spellings } of foods) {
       if (options.group && !code.startsWith(options.group)) continue;
       const found = spellings
-        .map((spelled) => ({ rank: rankOf(asked, spelled), length: spelled.whole.length }))
+        .map((spelled) => ({ rank: rankOf(asked, spelled, endsOf), length: spelled.whole.length }))
         .filter(({ rank }) => rank >= 0)
         .sort((a, b) => a.rank - b.rank || a.length - b.length)[0];
       if (found) hits.push({ code, name, match: MATCHES[found.rank]!, ...found });
@@ -52,4 +54,17 @@ export function createFinder(names: Record<string, string>, language: Language):
   }
 
   return { search };
+}
+
+// A compound ends with a word that stands alone in some name: "Grießbrei" is a "Brei", never an "Ei".
+function compoundsOf(
+  foods: { spellings: Spelling[] }[],
+  rules: NonNullable<Language["compounds"]>,
+): (word: string) => string[] {
+  const known = new Set(
+    foods.flatMap((food) => food.spellings.flatMap((spelled) => spelled.words)),
+  );
+  for (const ending of rules.endings) known.add(ending);
+  const reading = { known, units: rules.units, found: new Map<string, string[]>() };
+  return (word) => heads(word, reading);
 }

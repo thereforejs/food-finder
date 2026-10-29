@@ -7,4 +7,5 @@ export const german: Language = {
   spell: (text) => text.replace(/[ßäöü]/g, (char) => LETTERS[char] ?? char),
   // The BLS writes "Type 550".
   same: new Map([["typ", "type"]]),
+  compounds: { endings: ["frei"], units: ["buchweizen"] },
 };

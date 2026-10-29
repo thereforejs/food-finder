@@ -123,8 +123,43 @@ describe("words", () => {
   });
 
   test("a word of the query is a whole word of the name, never its start or middle", () => {
-    expect(matched("Milch")).toEqual({ X810123: "words" });
+    expect(matched("Milch")).toMatchObject({ X810123: "words" });
+    expect(codes("Milch")).not.toContain("S539900");
     expect(codes("Vollmilch")).not.toContain("S539900");
+  });
+});
+
+describe("compound (German: the last part names the kind)", () => {
+  test("Butter finds Süßrahmbutter, after the names that say Butter", () => {
+    expect(matched("Butter")).toEqual({
+      Q6A4000: "prefix",
+      X951133: "words",
+      X434442: "words",
+      Q630000: "compound",
+      Q530000: "compound",
+    });
+    expect(codes("Butter").slice(0, 3)).toEqual(["Q6A4000", "X951133", "X434442"]);
+  });
+
+  test("Ei finds Hühnerei", () => {
+    expect(matched("Ei")).toMatchObject({ X951133: "words", E111100: "compound" });
+  });
+
+  test("a compound and a whole word in one query", () => {
+    expect(matched("Ei roh")).toEqual({ E111100: "compound" });
+  });
+
+  test("Milch finds Vollmilch and Ziegenmilch, never Vollmilchschokolade", () => {
+    expect(matched("Milch")).toMatchObject({
+      M111300: "compound",
+      M114300: "compound",
+      M021000: "compound",
+    });
+  });
+
+  test("a compound needs more than the query: Roggenmehl is no Roggen Vollkornmehl", () => {
+    expect(codes("Roggenmehl")).toEqual(["C223100"]);
+    expect(matched("Süßrahmbutter")).toEqual({ Q630000: "exact" });
   });
 });
 
@@ -136,6 +171,7 @@ describe("languages", () => {
       D3A1000: "Cream éclairs (choux pastry)",
       Q630000: "Sweet cream butter",
       M150000: "Buttermilk",
+      M111300: "Whole milk, fresh, 3.5 % fat, pasteurised",
     },
     english,
   );
@@ -146,7 +182,7 @@ describe("languages", () => {
 
   test("English writes the kind as its own word: buttermilk is no milk", () => {
     expect(finderEn.search("butter").map((hit) => hit.match)).toEqual(["words", "words", "words"]);
-    expect(finderEn.search("milk")).toEqual([]);
+    expect(finderEn.search("milk").map((hit) => hit.code)).toEqual(["M111300"]);
   });
 });
 

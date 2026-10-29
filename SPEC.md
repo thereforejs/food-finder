@@ -116,14 +116,15 @@ Each language is one module with its rules and one entry point that binds them:
 
 ## 6. Meanings
 
-What people mean by an everyday word: "Butter" is "Süßrahmbutter", "Mehl" is "Weizen Mehl, Type 405".
+What people mean by an everyday word: "Butter" is "Süßrahmbutter". A word that is undefined on its
+own means several foods: "Mehl" is every typed flour of wheat, rye and spelt, and a human picks.
 One file per language, maintained by hand and by contributors, its own entry point:
 
 ```ts
 // src/de/meanings.ts
 export const meanings = {
   Butter: ["Q630000"],
-  Mehl: ["C214100"],
+  Mehl: ["C214100", "C214200" /* every typed flour */],
 } satisfies Meanings;
 ```
 
@@ -132,7 +133,7 @@ export const meanings = {
 - A meaning is one more spelling of its foods and goes through the same tiers. It ranks before an
   equal hit without a meaning: "Butter" finds "Süßrahmbutter" before "Butter gesalzen".
 - Several sources stack, the first wins: a bakery passes `[bakery, meanings]`, where its `Mehl` is
-  Type 550 and ours is Type 405.
+  Type 550 alone and ours lists every typed flour.
 - Codes the names do not hold are ignored; an application may pass a filtered index.
 - Meanings never change how compounds are read: those are read from the names alone.
 - Tests: every code of our files exists in the installed foods, keys are sorted, no two keys read the

@@ -146,12 +146,18 @@ export const meanings = {
 foods measured 2026-10-26 with the Vite+ bundler on its built package: an application with one food
 is 502 B gzip, the German names are their own lazy chunk of 69.6 KB gzip, no English in it.
 
-The same probe on this package's build, recorded here with its date:
+The same probe on this package's build, 2026-10-29: an application built with the Vite+ bundler
+(minified, `gzip -9`), the finder imported, the names loaded on first use.
 
-1. An application with the German finder and the names loaded on first use: the finder is small, the
-   names are their own chunk, no English rules or meanings in any chunk.
-2. Meanings not imported: none in the bundle.
-3. Worse numbers than foods' mean not done.
+| Application              | App part | Names chunk    |
+| ------------------------ | -------- | -------------- |
+| `/de`, no meanings       | 2,255 B  | 69,641 B, lazy |
+| `/de` and `/de/meanings` | 2,390 B  | 69,641 B, lazy |
+| `/en`, no meanings       | 2,173 B  | 67,923 B, lazy |
+
+- The names chunk is foods' own, unchanged: the finder adds nothing to it.
+- A German application holds no English rules and no English names; an English one no German rules.
+- Without `/de/meanings` imported, no meaning is in the bundle.
 
 ---
 
@@ -192,5 +198,5 @@ The same probe on this package's build, recorded here with its date:
    "Weizenmehl")?
 2. **English:** anything beyond accents?
 3. **Peer range:** `^0.0.1` allows only foods 0.0.1.
-4. **Root entry point `.`:** types only, or nothing?
+4. ~~Root entry point `.`~~: none, every import goes through a language (2026-10-29).
 5. **Hyphenated words:** joining "Alaska-Seelachs" demoted raw materials in the old search; left out.

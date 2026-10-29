@@ -26,7 +26,10 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": "./dist/index.mjs",
+    "./de": "./dist/de.mjs",
+    "./de/meanings": "./dist/de/meanings.mjs",
+    "./en": "./dist/en.mjs",
+    "./en/meanings": "./dist/en/meanings.mjs",
     "./package.json": "./package.json"
   },
   "publishConfig": {

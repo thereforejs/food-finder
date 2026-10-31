@@ -52,7 +52,7 @@
     "vite-plus": "catalog:"
   },
   "peerDependencies": {
-    "@thereforejs/foods": "^0.0.1"
+    "@thereforejs/foods": ">=0.0.1 <1"
   },
   "packageManager": "pnpm@12.15.0"
 }

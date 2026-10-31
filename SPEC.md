@@ -197,6 +197,6 @@ The same probe on this package's build, 2026-10-29: an application built with th
 1. **Typos:** Levenshtein 1 for short, 2 for long words as their own lowest tier ("Weizemehl" finds
    "Weizenmehl")?
 2. **English:** anything beyond accents?
-3. **Peer range:** `^0.0.1` allows only foods 0.0.1.
+3. ~~Peer range~~: `>=0.0.1 <1`; a caret on 0.0.x allows only that one version (2026-10-31).
 4. ~~Root entry point `.`~~: none, every import goes through a language (2026-10-29).
 5. **Hyphenated words:** joining "Alaska-Seelachs" demoted raw materials in the old search; left out.

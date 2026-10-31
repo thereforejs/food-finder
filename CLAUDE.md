@@ -5,17 +5,18 @@ type, published as `@thereforejs/food-finder` (repo `thereforejs/food-finder`). 
 and ships only the names; the search, aliases, language rules and compounds live here. Never push any
 of it back into foods.
 
-**`SPEC.md` is the source of truth** once it exists. Read the relevant section before touching a
+**`SPEC.md` is the source of truth.** Read the relevant section before touching a
 rule. Where the spec is unsure it says so: never guess an answer, raise it with Flo. Decisions in it
 are not reopened without him.
 
 ## Non-negotiables
 
 - **Lazy loading must not get worse.** The finder never imports a names index itself; the app loads
-  `@thereforejs/foods/names/<lang>` and passes it in. `@thereforejs/foods` is a peer dependency.
+  `@thereforejs/foods/names/<lang>` and passes it in. foods is a peer dependency
+  `>=0.0.1 <1`: every 0.x of foods fits without a release here.
 - **One entry point per language.** No module holds a collection of all languages: a map `{ de, en }`
   pulls everything into every bundle. English never lands in a German app.
-- **Work per index is cached** per names object in a `WeakMap`.
+- **One finder per index:** `createFinder` reads the names once; the app keeps the finder.
 - **Acceptance is a bundle probe**, as in foods: the app part tiny, the index its own lazy chunk, no
   English in a German app. Worse numbers mean not done.
 - **Measure, don't claim:** every number in docs (bundle size, timing) comes from a probe that ran.

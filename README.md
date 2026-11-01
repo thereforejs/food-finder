@@ -49,8 +49,18 @@ You get:
   - `words`: every word of the query is a whole word of the name, any order. Singular and plural
     are one word: "Zwiebel" finds "Zwiebeln gebraten", "Tomaten" finds "Tomate roh".
   - `compound`: a word of the query is the last part of a compound: "Butter" finds "Kakaobutter".
-  - `partial`: only when no name holds the whole query, the names that hold the most of it.
+  - `partial`: only when no name holds the whole query, the names that hold the most of it. A part
+    that is only a preparation ("gedünstet") or a short word ("der") is no hit.
+  - `fuzzy`: only when nothing else is found, every word no name holds read as its nearest known
+    word, one letter off from five letters, two from seven: "Kartofel" finds "Kartoffel",
+    "Spagetti gekocht" the cooked pasta. Short words are never read so: "Eis" stays "Eis".
 - **`meant`**: found through a meaning (below), not the name.
+
+A preparation ("gekocht", "gebraten", "Dose") picks the variant of what the other words mean:
+"Spaghetti gekocht" is "Teigwaren eifrei, gekocht", "Ei gekocht" is "Hühnerei gekocht", not
+"Entenei gekocht". Where the food has no such variant, the food itself comes with the preparation
+missed, never another food that merely shares it.
+
 - **`missed`**: the words of the query, as read, that the name does not hold (`partial` only).
 
 Options of `search`: `limit` (at most this many hits) and `group` (only codes starting with it, the
@@ -121,11 +131,12 @@ the Vite+ bundler, minified, gzip:
 
 | Application              | App part | Names, loaded on first use |
 | ------------------------ | -------- | -------------------------- |
-| `/de`                    | 2,548 B  | 70,882 B                   |
-| `/de` and `/de/meanings` | 3,676 B  | 70,882 B                   |
-| `/en`                    | 2,306 B  | 69,116 B                   |
+| `/de`                    | 3,603 B  | 70,882 B                   |
+| `/de` and `/de/meanings` | 4,789 B  | 70,882 B                   |
+| `/en`                    | 3,326 B  | 69,116 B                   |
 
-On the 7,152 German names, `createFinder` takes about 75 to 95 ms and a search about 6 to 40 ms.
+On the 7,152 German names, `createFinder` takes about 75 to 95 ms (the first call up to 130 ms) and a
+search about 9 to 40 ms; a mistyped one, read word by word, up to about 65 ms.
 
 ## License
 

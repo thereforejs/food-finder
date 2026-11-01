@@ -91,6 +91,7 @@ describe("German spellings on the BLS names", () => {
   test.each([
     ["Crème fraîche", "M176800", "Sauerrahm/Creme fraiche, 30 % Fett"],
     ["Brokkoli", "G312100", "Broccoli roh"],
+    ["Majonäse", "Q991000", "Mayonnaise (Fertigprodukt)"],
   ])("%s finds %s %s", (query, code) => {
     expect(codes(query)).toContain(code);
   });

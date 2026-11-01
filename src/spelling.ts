@@ -12,10 +12,10 @@ export type Spelling = {
 
 /**
  * How a hit matched the query, best first: the whole name, its start, its words, its words with a
- * word of the query as the last part of a compound ("Butter" in "Süßrahmbutter"), or some words of
- * the query only.
+ * word of the query as the last part of a compound ("Butter" in "Süßrahmbutter"), some words of the
+ * query only, or, when nothing else is found, a mistyped word read as the nearest known one.
  */
-export const MATCHES = ["exact", "prefix", "words", "compound", "partial"] as const;
+export const MATCHES = ["exact", "prefix", "words", "compound", "partial", "fuzzy"] as const;
 
 export type Match = (typeof MATCHES)[number];
 
@@ -152,4 +152,31 @@ function covers(asked: string[], spans: Set<string>, stem: (word: string) => str
     });
   }
   return reached[asked.length] === true;
+}
+
+/**
+ * Letters to change, add, drop or swap with a neighbour to turn `a` into `b`; `limit + 1` as soon as
+ * it is clear that more than `limit` are needed.
+ */
+export function distance(a: string, b: string, limit: number): number {
+  if (Math.abs(a.length - b.length) > limit) return limit + 1;
+  let before: number[] = [];
+  let previous = Array.from({ length: b.length + 1 }, (_, index) => index);
+  for (let i = 1; i <= a.length; i++) {
+    const current = [i];
+    let smallest = i;
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      let value = Math.min(previous[j]! + 1, current[j - 1]! + 1, previous[j - 1]! + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        value = Math.min(value, before[j - 2]! + 1);
+      }
+      current[j] = value;
+      smallest = Math.min(smallest, value);
+    }
+    if (smallest > limit) return limit + 1;
+    before = previous;
+    previous = current;
+  }
+  return Math.min(previous[b.length]!, limit + 1);
 }

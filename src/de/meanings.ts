@@ -42,6 +42,9 @@ export const meanings: Meanings = {
   Kresse: ["G280100"],
   Kürbis: ["G581000", "G581100"],
   Magerquark: ["M713100"],
+  // Sweet corn, as a recipe means it; grain maize last.
+  Mais: ["G570100", "G570902", "C341000"],
+  Maiskörner: ["G570902", "G570100"],
   Margarine: ["Q400000", "Q481000"],
   // Undefined on its own: every typed flour of wheat, rye and spelt, a human picks.
   Mehl: [
@@ -92,6 +95,7 @@ export const meanings: Meanings = {
   Sirup: ["S151100", "S154000", "S151000"],
   Spaghetti: ["E401000"],
   Speck: ["W411300", "W410400"],
+  Speisestärke: ["C446000", "C216000"],
   Stärke: ["C446000", "C216000"],
   Staudensellerie: ["G220100"],
   Tahini: ["Q901000"],
@@ -102,6 +106,7 @@ export const meanings: Meanings = {
   Vollkornnudeln: ["E510000"],
   Vollkornreis: ["C351000"],
   Wasser: ["N110000"],
+  "Weiße Bohnen": ["H739400"],
   Weißwein: ["P210000"],
   Zartbitterschokolade: ["S560000"],
   Zucker: ["S111000"],

@@ -5,6 +5,22 @@ export const english: Language = {
   // "Crème", "rösti": typed without their accents.
   spell: (text) => text.normalize("NFD").replace(/\p{M}/gu, "").normalize("NFC"),
   same: new Map(),
+  dish: "with",
+  preparations: [
+    "raw",
+    "cooked",
+    "boiled",
+    "fried",
+    "stewed",
+    "steamed",
+    "baked",
+    "grilled",
+    "braised",
+    "roasted",
+    "dried",
+    "frozen",
+    "ground",
+  ],
   stem: (word) => {
     if (word.length > 4 && word.endsWith("ies")) return `${word.slice(0, -3)}y`;
     if (word.length > 4 && word.endsWith("oes")) return word.slice(0, -2);

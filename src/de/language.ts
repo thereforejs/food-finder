@@ -26,12 +26,37 @@ export const german: Language = {
       .normalize("NFD")
       .replace(/\p{M}/gu, "")
       .normalize("NFC"),
-  // The BLS writes "Type 550" and "Broccoli".
+  // The BLS writes "Type 550", "Broccoli", "Konserve" and "Mayonnaise" (Duden: also "Majonäse").
   same: new Map([
     ["typ", "type"],
     ["brokkoli", "broccoli"],
+    ["dose", "konserve"],
+    ["majonaese", "mayonnaise"],
   ]),
   compounds: { endings: ["frei"], units: ["buchweizen"] },
+  dish: "mit",
+  // As the BLS names them; typed as adjectives too ("gekochte", "gebratener").
+  preparations: [
+    "roh",
+    "gekocht",
+    "gebraten",
+    "gedünstet",
+    "gedämpft",
+    "gebacken",
+    "gegrillt",
+    "geschmort",
+    "frittiert",
+    "pochiert",
+    "überbacken",
+    "geröstet",
+    "getrocknet",
+    "geräuchert",
+    "konserve",
+    "tiefgefroren",
+    "gemahlen",
+    "püriert",
+    "blanchiert",
+  ],
   stem: (word) => {
     const umlaut = UMLAUT_PLURALS.find(([plural]) => word.endsWith(plural));
     // Until nothing changes, so both forms meet: "Champignons" and "Champignon" are "champigno".

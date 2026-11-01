@@ -19,7 +19,10 @@ export const MATCHES = ["exact", "prefix", "words", "compound", "partial"] as co
 
 export type Match = (typeof MATCHES)[number];
 
-export function spell(words: string[]): Spelling {
+/** A word as it is: for languages without a `stem`. */
+export const same = (word: string) => word;
+
+export function spell(words: string[], stem: (word: string) => string = same): Spelling {
   const ends = new Set<number>();
   const spans = new Set<string>();
   let end = 0;
@@ -27,7 +30,9 @@ export function spell(words: string[]): Spelling {
     end += words[start]!.length;
     ends.add(end);
     for (let last = start + 1; last <= words.length; last++) {
-      spans.add(words.slice(start, last).join(""));
+      const span = words.slice(start, last).join("");
+      spans.add(span);
+      spans.add(stem(span));
     }
   }
   return { words, whole: words.join(""), ends, spans };
@@ -41,15 +46,29 @@ export function rankOf(
   asked: string[],
   name: Spelling,
   endsOf?: (word: string) => string[],
+  stem: (word: string) => string = same,
 ): number {
   const wanted = asked.join("");
   if (!wanted) return -1;
   if (name.whole === wanted) return 0;
   // A prefix ends with a word of the name: "Weizenmehl" is "Weizen Mehl, ...", never "Weizenmehlschwitze".
   if (name.ends.has(wanted.length) && name.whole.startsWith(wanted)) return 1;
-  if (covers(asked, name.spans)) return 2;
+  // Singular and plural start a name alike: "Erdbeeren" starts "Erdbeere roh".
+  if (startsAsStem(wanted, name, stem)) return 1;
+  if (covers(asked, name.spans, stem)) return 2;
   if (!endsOf) return -1;
-  return covers(asked, piecesOf(name, endsOf)) ? 3 : -1;
+  return covers(asked, piecesOf(name, endsOf, stem), stem) ? 3 : -1;
+}
+
+function startsAsStem(wanted: string, name: Spelling, stem: (word: string) => string): boolean {
+  const asked = stem(wanted);
+  let lead = "";
+  for (const word of name.words) {
+    lead += word;
+    if (lead.length > wanted.length + 2) return false;
+    if (stem(lead) === asked) return true;
+  }
+  return false;
 }
 
 export type Partial = { covered: number; missed: string[] };
@@ -74,8 +93,9 @@ export function partialOf(
   asked: Asked,
   name: Spelling,
   endsOf?: (word: string) => string[],
+  stem: (word: string) => string = same,
 ): Partial | undefined {
-  const pieces = piecesOf(name, endsOf);
+  const pieces = piecesOf(name, endsOf, stem);
   const best: Partial[] = [{ covered: 0, missed: [] }];
   for (let end = 1; end <= asked.words.length; end++) {
     const word = asked.words[end - 1]!;
@@ -83,7 +103,7 @@ export function partialOf(
     const options = [{ covered: before.covered, missed: [...before.missed, word] }];
     for (let start = 0; start < end; start++) {
       const run = asked.runs[end - 1]![start]!;
-      if (!pieces.has(run)) continue;
+      if (!pieces.has(run) && !pieces.has(stem(run))) continue;
       options.push({ covered: best[start]!.covered + run.length, missed: best[start]!.missed });
     }
     for (const tail of asked.tails[end - 1]!) {
@@ -101,21 +121,30 @@ export function partialOf(
 
 // What a word of the query may be in this name: its runs of words, and with compounds what each
 // word ends with.
-function piecesOf(name: Spelling, endsOf?: (word: string) => string[]): Set<string> {
+function piecesOf(
+  name: Spelling,
+  endsOf?: (word: string) => string[],
+  stem: (word: string) => string = same,
+): Set<string> {
   if (!endsOf) return name.spans;
-  name.compounds ??= new Set([...name.spans, ...name.words.flatMap((word) => endsOf(word))]);
+  name.compounds ??= new Set([
+    ...name.spans,
+    ...name.words.flatMap((word) => endsOf(word).flatMap((head) => [head, stem(head)])),
+  ]);
   return name.compounds;
 }
 
 // Every word of the query, alone or joined with its neighbours, is one or more whole words of the
 // name in a row: "Roggenmehl" is "Roggen Mehl", never a part of "Roggen Vollkornmehl". With
 // compounds, it may also be what a compound ends with: "Butter" in "Süßrahmbutter".
-function covers(asked: string[], spans: Set<string>): boolean {
+function covers(asked: string[], spans: Set<string>, stem: (word: string) => string): boolean {
   const reached = [true];
   for (let end = 1; end <= asked.length; end++) {
-    reached[end] = asked
-      .slice(0, end)
-      .some((_, start) => reached[start] === true && spans.has(asked.slice(start, end).join("")));
+    reached[end] = asked.slice(0, end).some((_, start) => {
+      if (reached[start] !== true) return false;
+      const run = asked.slice(start, end).join("");
+      return spans.has(run) || spans.has(stem(run));
+    });
   }
   return reached[asked.length] === true;
 }

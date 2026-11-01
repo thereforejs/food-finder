@@ -46,7 +46,8 @@ You get:
   - `exact`: the whole name. Spaces never matter: "Weizenmehl Typ 550" is "Weizen Mehl, Type 550".
   - `prefix`: the start of the name, ending at a word: "Weizenmehl" finds "Weizen Mehl, Type 405",
     never "Weizenmehlschwitze".
-  - `words`: every word of the query is a whole word of the name, any order.
+  - `words`: every word of the query is a whole word of the name, any order. Singular and plural
+    are one word: "Zwiebel" finds "Zwiebeln gebraten", "Tomaten" finds "Tomate roh".
   - `compound`: a word of the query is the last part of a compound: "Butter" finds "Kakaobutter".
   - `partial`: only when no name holds the whole query, the names that hold the most of it.
 - **`meant`**: found through a meaning (below), not the name.
@@ -107,11 +108,11 @@ const finder = createFinder(
 
 One entry point per language, so a German application holds no English:
 
-| Import                               | Reads                                                            |
-| ------------------------------------ | ---------------------------------------------------------------- |
-| `@thereforejs/food-finder/de`        | German: ß/ä/ö/ü typed as ss/ae/oe/ue, "Typ" as "Type", compounds |
-| `@thereforejs/food-finder/en`        | English: accents typed without them                              |
-| `.../de/meanings`, `.../en/meanings` | the meanings of each language, only when you import them         |
+| Import                               | Reads                                                                                            |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| `@thereforejs/food-finder/de`        | German: ß/ä/ö/ü typed as ss/ae/oe/ue, other accents dropped, "Typ" as "Type", plurals, compounds |
+| `@thereforejs/food-finder/en`        | English: accents typed without them, plurals                                                     |
+| `.../de/meanings`, `.../en/meanings` | the meanings of each language, only when you import them                                         |
 
 ## Size
 

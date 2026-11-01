@@ -46,10 +46,21 @@ You get:
   - `exact`: the whole name. Spaces never matter: "Weizenmehl Typ 550" is "Weizen Mehl, Type 550".
   - `prefix`: the start of the name, ending at a word: "Weizenmehl" finds "Weizen Mehl, Type 405",
     never "Weizenmehlschwitze".
-  - `words`: every word of the query is a whole word of the name, any order.
+  - `words`: every word of the query is a whole word of the name, any order. Singular and plural
+    are one word: "Zwiebel" finds "Zwiebeln gebraten", "Tomaten" finds "Tomate roh".
   - `compound`: a word of the query is the last part of a compound: "Butter" finds "Kakaobutter".
-  - `partial`: only when no name holds the whole query, the names that hold the most of it.
+  - `partial`: only when no name holds the whole query, the names that hold the most of it. A part
+    that is only a preparation ("gedünstet") or a short word ("der") is no hit.
+  - `fuzzy`: only when nothing else is found, every word no name holds read as its nearest known
+    word, one letter off from five letters, two from seven: "Kartofel" finds "Kartoffel",
+    "Spagetti gekocht" the cooked pasta. Short words are never read so: "Eis" stays "Eis".
 - **`meant`**: found through a meaning (below), not the name.
+
+A preparation ("gekocht", "gebraten", "Dose") picks the variant of what the other words mean:
+"Spaghetti gekocht" is "Teigwaren eifrei, gekocht", "Ei gekocht" is "Hühnerei gekocht", not
+"Entenei gekocht". Where the food has no such variant, the food itself comes with the preparation
+missed, never another food that merely shares it.
+
 - **`missed`**: the words of the query, as read, that the name does not hold (`partial` only).
 
 Options of `search`: `limit` (at most this many hits) and `group` (only codes starting with it, the
@@ -107,23 +118,25 @@ const finder = createFinder(
 
 One entry point per language, so a German application holds no English:
 
-| Import                               | Reads                                                            |
-| ------------------------------------ | ---------------------------------------------------------------- |
-| `@thereforejs/food-finder/de`        | German: ß/ä/ö/ü typed as ss/ae/oe/ue, "Typ" as "Type", compounds |
-| `@thereforejs/food-finder/en`        | English: accents typed without them                              |
-| `.../de/meanings`, `.../en/meanings` | the meanings of each language, only when you import them         |
+| Import                               | Reads                                                                                            |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| `@thereforejs/food-finder/de`        | German: ß/ä/ö/ü typed as ss/ae/oe/ue, other accents dropped, "Typ" as "Type", plurals, compounds |
+| `@thereforejs/food-finder/en`        | English: accents typed without them, plurals                                                     |
+| `.../de/meanings`, `.../en/meanings` | the meanings of each language, only when you import them                                         |
 
 ## Size
 
-Measured 2026-10-29, an application built with the Vite+ bundler, minified, gzip:
+Measured 2026-11-01 with `vpx scripts/size.ts` after `vp pack`: an application per entry, built with
+the Vite+ bundler, minified, gzip:
 
 | Application              | App part | Names, loaded on first use |
 | ------------------------ | -------- | -------------------------- |
-| `/de`                    | 2,255 B  | 69,641 B                   |
-| `/de` and `/de/meanings` | 2,390 B  | 69,641 B                   |
-| `/en`                    | 2,173 B  | 67,923 B                   |
+| `/de`                    | 3,603 B  | 70,882 B                   |
+| `/de` and `/de/meanings` | 4,789 B  | 70,882 B                   |
+| `/en`                    | 3,326 B  | 69,116 B                   |
 
-On the 7,108 German names, `createFinder` takes about 65 ms and a search about 10 to 40 ms.
+On the 7,152 German names, `createFinder` takes about 75 to 95 ms (the first call up to 130 ms) and a
+search about 9 to 40 ms; a mistyped one, read word by word, up to about 65 ms.
 
 ## License
 

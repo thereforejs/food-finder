@@ -1,7 +1,9 @@
+import fc from "fast-check";
 import { describe, expect, test } from "vite-plus/test";
 import { german } from "../src/de/language.ts";
 import { english } from "../src/en/language.ts";
 import { createFinder, type SearchOptions } from "../src/finder.ts";
+import { distance } from "../src/spelling.ts";
 
 // Real BLS 4.0 names.
 const names = {
@@ -317,5 +319,38 @@ describe("ranking and options", () => {
   test("group is the first letter of the code", () => {
     expect(codes("Fett", { group: "M" })).toEqual(["M021000", "M111300", "M114300"]);
     expect(codes("Fett", { group: "X" })).toEqual(["X810123"]);
+  });
+});
+
+describe("distance", () => {
+  const word = fc.stringMatching(/^[a-z]{1,12}$/);
+
+  test("a word is no distance from itself", () => {
+    fc.assert(fc.property(word, (a) => distance(a, a, 2) === 0));
+  });
+
+  test("one letter added, dropped, changed or two neighbours swapped is one", () => {
+    fc.assert(
+      fc.property(word, fc.nat(), fc.constantFrom("q", "x", "z"), (a, at, letter) => {
+        const i = at % a.length;
+        expect(distance(a, a.slice(0, i) + letter + a.slice(i), 2)).toBe(1);
+        if (a.length > 1) expect(distance(a, a.slice(0, i) + a.slice(i + 1), 2)).toBe(1);
+        if (a[i] !== letter)
+          expect(distance(a, a.slice(0, i) + letter + a.slice(i + 1), 2)).toBe(1);
+        if (i + 1 < a.length && a[i] !== a[i + 1]) {
+          expect(distance(a, a.slice(0, i) + a[i + 1] + a[i] + a.slice(i + 2), 2)).toBe(1);
+        }
+      }),
+    );
+  });
+
+  test("never more than the limit plus one, and the same both ways", () => {
+    fc.assert(
+      fc.property(word, word, fc.integer({ min: 0, max: 3 }), (a, b, limit) => {
+        const away = distance(a, b, limit);
+        expect(away).toBeLessThanOrEqual(limit + 1);
+        expect(distance(b, a, limit)).toBe(away);
+      }),
+    );
   });
 });

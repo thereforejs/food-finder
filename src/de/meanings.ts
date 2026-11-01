@@ -1,11 +1,50 @@
 import type { Meanings } from "../meanings.ts";
 
 export const meanings: Meanings = {
+  Balsamico: ["R125000"],
+  Bier: ["P163000"],
+  Bockshornklee: ["R_000035"],
+  "Brauner Zucker": ["S112000"],
+  // Undefined on its own: wheat-rye, rye-wheat and white bread, a human picks.
+  Brot: ["B251000", "B271000", "B311000"],
   Butter: ["Q630000"],
+  Chili: ["G554100", "G553100"],
   Ei: ["E111100"],
+  Eiweiß: ["E113100"],
+  // Green peas, as a recipe means them; dried ones are "Erbse reif".
+  Erbsen: ["G760200", "G760100"],
   // Spirit vinegar is what "Essig" means in a German kitchen; the others follow.
   Essig: ["R122000", "R121000", "R123100"],
+  Fenchel: ["G430100"],
+  Frischkäse: ["M710800", "M710700"],
+  "Gehackte Tomaten": ["G560900"],
+  Grieß: ["C219300", "C218000"],
+  "Grüne Bohnen": ["G710100"],
+  Gulasch: ["U151100"],
+  Hackfleisch: ["U040100", "U010100", "U020100"],
   Hefe: ["R459000", "R458000"],
+  // The BLS names chicken by "Hähnchen" only.
+  Hühnchen: ["V416100", "V4A6100", "V413000"],
+  Hüttenkäse: ["M711300", "M711100"],
+  Ingwerpulver: ["R_000024"],
+  // Varieties of polished rice; the BLS has polished rice as one food.
+  Jasminreis: ["C352000"],
+  Joghurt: ["M141300", "M141200", "M141100"],
+  Ketchup: ["R141100"],
+  Kirsche: ["F211100", "F212100"],
+  Knoblauchzehe: ["G490100"],
+  Kochschinken: ["W424000"],
+  // Undefined on its own: the white, red, savoy and pointed cabbage, a human picks.
+  Kohl: ["G342100", "G341100", "G343100", "G344100"],
+  Kokosraspel: ["H150400"],
+  // The fresh leaves, then the dried seed.
+  Koriander: ["G_000001", "R_000006"],
+  Kresse: ["G280100"],
+  Kürbis: ["G581000", "G581100"],
+  Magerquark: ["M713100"],
+  // Sweet corn, as a recipe means it; grain maize last.
+  Mais: ["G570100", "G570902", "C341000"],
+  Maiskörner: ["G570902", "G570100"],
   Margarine: ["Q400000", "Q481000"],
   // Undefined on its own: every typed flour of wheat, rye and spelt, a human picks.
   Mehl: [
@@ -23,13 +62,55 @@ export const meanings: Meanings = {
     "C234100",
     "C234200",
   ],
+  Melone: ["F533100", "F532100", "F535100"],
   Milch: ["M111300"],
+  Naturjoghurt: ["M141300", "M141200"],
+  Naturreis: ["C351000"],
+  // Dried pasta without egg, with egg, wholemeal.
+  Nudeln: ["E401000", "E432000", "E510000"],
+  // The BLS calls cooked pasta "Teigwaren ... gekocht".
+  "Nudeln gekocht": ["E401032", "E432032", "E500032"],
   Öl: ["Q180000", "Q320000", "Q120000"],
+  Paprika: ["G543100", "G542100", "G541100"],
+  Petersilie: ["G250100"],
+  Pilze: ["K701100", "K750100"],
   Quark: ["M713100", "M713300", "M713500"],
+  // Polished white rice, then parboiled; both raw, as weighed for a recipe.
+  Reis: ["C352000", "C359000"],
+  Rinderhackfleisch: ["U010100"],
+  Risottoreis: ["C352000"],
+  Rohrzucker: ["S112000"],
+  "Rote Bete": ["G613100"],
+  "Rote Linsen": ["H730000"],
+  Rotwein: ["P2A3000"],
   Sahne: ["M173800", "M173900"],
+  "Salbei getrocknet": ["R_000013"],
   Salz: ["R111000", "R114000"],
+  Schinken: ["W424000", "W442000"],
+  Schweinenacken: ["U632100"],
+  Sellerie: ["G660100", "G220100"],
+  Senfkörner: ["R_000019"],
   // Speisestärke is mostly maize starch.
+  // Undefined on its own: maple, fruit and glucose syrup, a human picks.
+  Sirup: ["S151100", "S154000", "S151000"],
+  Spaghetti: ["E401000"],
+  Speck: ["W411300", "W410400"],
+  Speisestärke: ["C446000", "C216000"],
   Stärke: ["C446000", "C216000"],
+  Staudensellerie: ["G220100"],
+  Tahini: ["Q901000"],
+  Tee: ["N630000", "N610100"],
+  Traube: ["F310100", "F311100", "F312100"],
+  Trockenhefe: ["R458000"],
+  Vollkornmehl: ["C211000"],
+  Vollkornnudeln: ["E510000"],
+  Vollkornreis: ["C351000"],
   Wasser: ["N110000"],
+  "Weiße Bohnen": ["H739400"],
+  Weißwein: ["P210000"],
+  Zartbitterschokolade: ["S560000"],
   Zucker: ["S111000"],
+  // The BLS names the raw onion "Speisezwiebel"; fried onions would come first without it.
+  Zwiebel: ["G480100"],
+  Zwiebelpulver: ["G480500"],
 };

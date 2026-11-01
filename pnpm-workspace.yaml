@@ -8,3 +8,5 @@ peerDependencyRules:
     - vite
   allowedVersions:
     vite: "*"
+minimumReleaseAgeExclude:
+  - "@thereforejs/foods@0.0.3"

@@ -1,7 +1,9 @@
 import { names } from "@thereforejs/foods/names/de";
+import { names as englishNames } from "@thereforejs/foods/names/en";
 import fc from "fast-check";
 import { describe, expect, test } from "vite-plus/test";
 import { german } from "../src/de/language.ts";
+import { english } from "../src/en/language.ts";
 import { createFinder } from "../src/finder.ts";
 import { words } from "../src/words.ts";
 
@@ -45,6 +47,56 @@ describe("German compounds on the BLS names", () => {
   });
 });
 
+describe("German singular and plural on the BLS names", () => {
+  // People type one onion; the BLS writes "Speisezwiebel" and "Zwiebeln gebraten".
+  test.each([
+    ["Zwiebel", "G480100", "Speisezwiebel roh"],
+    ["Zwiebel", "X548163", "Zwiebeln gebraten"],
+    ["Olive", "H510802", "Oliven grün, gesäuert, abgetropft"],
+    ["Nudel", "C559000", "Reisnudeln roh"],
+    ["Schalotten", "G485100", "Schalotte roh"],
+    ["Paprikaschote", "X553712", "Paprikaschoten gebacken, mit Bulgur-Gemüsefüllung"],
+    ["Garnelen", "T753100", "Garnele/Granat/Krabbe, roh"],
+    ["Tomaten", "G561100", "Tomate roh"],
+    ["Kartoffeln", "K110100", "Kartoffel geschält, roh"],
+  ])("%s finds %s %s", (query, code) => {
+    expect(codes(query)).toContain(code);
+  });
+
+  // The plain food leads a dish whose name merely starts with the plural.
+  test.each([
+    ["Erdbeeren", "F301100", "Erdbeere roh"],
+    ["Linsen", "H725100", "Linse reif"],
+    ["Kichererbsen", "G770400", "Kichererbse reif"],
+    ["Champignons", "K701100", "Champignon roh"],
+    ["Haselnüsse", "H130100", "Haselnuss"],
+    ["Walnüsse", "H120100", "Walnuss"],
+    ["Äpfel", "F110100", "Apfel roh"],
+    // A plural before the last word: the name still starts with the query.
+    ["Kartoffeln geschält", "K110100", "Kartoffel geschält, roh"],
+  ])("%s leads with %s %s", (query, code) => {
+    expect(codes(query)[0]).toBe(code);
+  });
+
+  // An ending is a whole word's ending: a word still never matches the start of a longer one.
+  test.each([["Zwiebel", "D096000", "Zwiebelkuchen mit Speck (Hefeteig)"]])(
+    "%s never finds %s %s",
+    (query, code) => {
+      expect(codes(query)).not.toContain(code);
+    },
+  );
+});
+
+describe("German spellings on the BLS names", () => {
+  test.each([
+    ["Crème fraîche", "M176800", "Sauerrahm/Creme fraiche, 30 % Fett"],
+    ["Brokkoli", "G312100", "Broccoli roh"],
+    ["Majonäse", "Q991000", "Mayonnaise (Fertigprodukt)"],
+  ])("%s finds %s %s", (query, code) => {
+    expect(codes(query)).toContain(code);
+  });
+});
+
 test("compounds only add hits after all others, never drop or move one", () => {
   const plain = createFinder(names, { ...german, compounds: undefined });
   const vocabulary = [...new Set(Object.values(names).flatMap((name) => words(name, german)))];
@@ -56,6 +108,35 @@ test("compounds only add hits after all others, never drop or move one", () => {
       expect(after.slice(before.length).every((hit) => hit.match === "compound")).toBe(true);
     }),
     { numRuns: 30 },
+  );
+});
+
+describe("English plurals on the BLS names", () => {
+  const en = createFinder(englishNames, english);
+  test.each([
+    ["Shallots", "G485100", "Shallot raw"],
+    ["Grapes", "F310100", "Grape raw"],
+  ])("%s finds %s %s", (query, code) => {
+    expect(en.search(query).map((hit) => hit.code)).toContain(code);
+  });
+
+  // -ies, -oes and a plain -s meet their singular; the BLS writes "Potatoe".
+  test.each([
+    ["Potatoes", "K110100", "Potatoe peeled, raw"],
+    ["Peas", "G760100", "Pea green, raw"],
+    ["Cherries", "F211100", "Sweet cherry raw"],
+    ["Strawberries", "F301100", "Strawberry raw"],
+    ["Blueberries", "F304100", "Blueberry raw"],
+    ["Tomatoes", "G561100", "Tomato raw"],
+  ])("%s finds %s %s", (query, code) => {
+    expect(en.search(query).map((hit) => hit.code)).toContain(code);
+  });
+
+  test.each(["asparagus", "cress", "hummus", "bass", "pea", "berry", "potato", "oat"])(
+    "the singular %s stays as it is",
+    (word) => {
+      expect(english.stem?.(word)).toBe(word);
+    },
   );
 });
 

@@ -1,6 +1,6 @@
 {
   "name": "@thereforejs/food-finder",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Find foods of @thereforejs/foods by what people type: search, aliases and language rules, loaded per language",
   "keywords": [
     "bls",

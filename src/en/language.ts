@@ -5,6 +5,13 @@ export const english: Language = {
   // "Crème", "rösti": typed without their accents.
   spell: (text) => text.normalize("NFD").replace(/\p{M}/gu, "").normalize("NFC"),
   same: new Map(),
-  // "Shallots" are "Shallot raw"; four letters stay at least, so "Peas" and "Oats" keep theirs.
-  stem: (word) => (word.endsWith("s") && word.length > 4 ? word.slice(0, -1) : word),
+  stem: (word) => {
+    if (word.length > 4 && word.endsWith("ies")) return `${word.slice(0, -3)}y`;
+    if (word.length > 4 && word.endsWith("oes")) return word.slice(0, -2);
+    // The BLS writes "Potatoe peeled, raw".
+    if (word.length > 4 && word.endsWith("oe")) return word.slice(0, -1);
+    // Singulars that end in s: "Asparagus", "Cress", "Hummus".
+    if (/(ss|us|is)$/.test(word)) return word;
+    return word.length > 3 && word.endsWith("s") ? word.slice(0, -1) : word;
+  },
 };

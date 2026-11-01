@@ -53,20 +53,25 @@ export function rankOf(
   if (name.whole === wanted) return 0;
   // A prefix ends with a word of the name: "Weizenmehl" is "Weizen Mehl, ...", never "Weizenmehlschwitze".
   if (name.ends.has(wanted.length) && name.whole.startsWith(wanted)) return 1;
-  // Singular and plural start a name alike: "Erdbeeren" starts "Erdbeere roh".
-  if (startsAsStem(wanted, name, stem)) return 1;
+  if (startsAsStem(asked, name, stem)) return 1;
   if (covers(asked, name.spans, stem)) return 2;
   if (!endsOf) return -1;
   return covers(asked, piecesOf(name, endsOf, stem), stem) ? 3 : -1;
 }
 
-function startsAsStem(wanted: string, name: Spelling, stem: (word: string) => string): boolean {
-  const asked = stem(wanted);
+// Singular and plural start a name alike, word by word or as one: "Kartoffeln geschält" starts
+// "Kartoffel geschält, roh", "Erdbeeren" starts "Erdbeere roh".
+function startsAsStem(asked: string[], name: Spelling, stem: (word: string) => string): boolean {
+  const wanted = asked.join("");
+  const whole = stem(wanted);
+  const byWord = asked.map(stem).join("");
   let lead = "";
+  let leadByWord = "";
   for (const word of name.words) {
     lead += word;
+    leadByWord += stem(word);
     if (lead.length > wanted.length + 2) return false;
-    if (stem(lead) === asked) return true;
+    if (stem(lead) === whole || leadByWord === byWord) return true;
   }
   return false;
 }

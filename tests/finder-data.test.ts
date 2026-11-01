@@ -72,6 +72,8 @@ describe("German singular and plural on the BLS names", () => {
     ["Haselnüsse", "H130100", "Haselnuss"],
     ["Walnüsse", "H120100", "Walnuss"],
     ["Äpfel", "F110100", "Apfel roh"],
+    // A plural before the last word: the name still starts with the query.
+    ["Kartoffeln geschält", "K110100", "Kartoffel geschält, roh"],
   ])("%s leads with %s %s", (query, code) => {
     expect(codes(query)[0]).toBe(code);
   });
@@ -116,6 +118,25 @@ describe("English plurals on the BLS names", () => {
   ])("%s finds %s %s", (query, code) => {
     expect(en.search(query).map((hit) => hit.code)).toContain(code);
   });
+
+  // -ies, -oes and a plain -s meet their singular; the BLS writes "Potatoe".
+  test.each([
+    ["Potatoes", "K110100", "Potatoe peeled, raw"],
+    ["Peas", "G760100", "Pea green, raw"],
+    ["Cherries", "F211100", "Sweet cherry raw"],
+    ["Strawberries", "F301100", "Strawberry raw"],
+    ["Blueberries", "F304100", "Blueberry raw"],
+    ["Tomatoes", "G561100", "Tomato raw"],
+  ])("%s finds %s %s", (query, code) => {
+    expect(en.search(query).map((hit) => hit.code)).toContain(code);
+  });
+
+  test.each(["asparagus", "cress", "hummus", "bass", "pea", "berry", "potato", "oat"])(
+    "the singular %s stays as it is",
+    (word) => {
+      expect(english.stem?.(word)).toBe(word);
+    },
+  );
 });
 
 describe("raw material names on the BLS names", () => {

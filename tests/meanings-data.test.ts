@@ -74,6 +74,7 @@ describe("everyday kitchen words on the BLS names", () => {
     ["Tahini", ["Q901000"]],
     ["Vollkornreis", ["C351000"]],
     ["Zwiebelpulver", ["G480500"]],
+    ["Bockshornklee", ["R_000035"]],
     ["Gehackte Tomaten", ["G560900"]],
     ["Kochschinken", ["W424000"]],
     ["Magerquark", ["M713100"]],

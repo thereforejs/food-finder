@@ -116,15 +116,16 @@ One entry point per language, so a German application holds no English:
 
 ## Size
 
-Measured 2026-10-29, an application built with the Vite+ bundler, minified, gzip:
+Measured 2026-11-01 with `vpx scripts/size.ts` after `vp pack`: an application per entry, built with
+the Vite+ bundler, minified, gzip:
 
 | Application              | App part | Names, loaded on first use |
 | ------------------------ | -------- | -------------------------- |
-| `/de`                    | 2,255 B  | 69,641 B                   |
-| `/de` and `/de/meanings` | 2,390 B  | 69,641 B                   |
-| `/en`                    | 2,173 B  | 67,923 B                   |
+| `/de`                    | 2,548 B  | 70,882 B                   |
+| `/de` and `/de/meanings` | 3,676 B  | 70,882 B                   |
+| `/en`                    | 2,306 B  | 69,116 B                   |
 
-On the 7,108 German names, `createFinder` takes about 65 ms and a search about 10 to 40 ms.
+On the 7,152 German names, `createFinder` takes about 75 to 95 ms and a search about 6 to 40 ms.
 
 ## License
 

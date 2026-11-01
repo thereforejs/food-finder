@@ -3,6 +3,7 @@ import type { Meanings } from "../meanings.ts";
 export const meanings: Meanings = {
   Balsamico: ["R125000"],
   Bier: ["P163000"],
+  Bockshornklee: ["R_000035"],
   "Brauner Zucker": ["S112000"],
   // Undefined on its own: wheat-rye, rye-wheat and white bread, a human picks.
   Brot: ["B251000", "B271000", "B311000"],

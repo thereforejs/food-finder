@@ -45,7 +45,7 @@
     "prepare": "vp config"
   },
   "devDependencies": {
-    "@thereforejs/foods": "^0.0.1",
+    "@thereforejs/foods": "^0.0.3",
     "@types/node": "^26.6.5",
     "fast-check": "^4.10.2",
     "typescript": "^7.0.2",

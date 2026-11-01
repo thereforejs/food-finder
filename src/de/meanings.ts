@@ -65,6 +65,8 @@ export const meanings: Meanings = {
   Naturreis: ["C351000"],
   // Dried pasta without egg, with egg, wholemeal.
   Nudeln: ["E401000", "E432000", "E510000"],
+  // The BLS calls cooked pasta "Teigwaren ... gekocht".
+  "Nudeln gekocht": ["E401032", "E432032", "E500032"],
   Öl: ["Q180000", "Q320000", "Q120000"],
   Paprika: ["G543100", "G542100", "G541100"],
   Petersilie: ["G250100"],

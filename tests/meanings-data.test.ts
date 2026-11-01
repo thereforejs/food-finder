@@ -75,6 +75,7 @@ describe("everyday kitchen words on the BLS names", () => {
     ["Vollkornreis", ["C351000"]],
     ["Zwiebelpulver", ["G480500"]],
     ["Bockshornklee", ["R_000035"]],
+    ["Nudeln gekocht", ["E401032", "E432032", "E500032"]],
     ["Gehackte Tomaten", ["G560900"]],
     ["Kochschinken", ["W424000"]],
     ["Magerquark", ["M713100"]],
@@ -104,7 +105,9 @@ describe("everyday kitchen words on the BLS names", () => {
     ["Kresse", ["G280100"]],
     ["Kürbis", ["G581000", "G581100"]],
     ["Melone", ["F533100", "F532100", "F535100"]],
-    ["Nudeln", ["E401000", "E432000", "E510000"]],
+    // Raw first, then cooked, which "Nudeln gekocht" means.
+    ["Nudeln", ["E401000", "E432000", "E510000", "E401032", "E432032", "E500032"]],
+    ["gekochte Nudeln", ["E401032", "E432032", "E500032"]],
     ["Paprika", ["G543100", "G542100", "G541100"]],
     ["Petersilie", ["G250100"]],
     ["Reis", ["C352000", "C359000"]],

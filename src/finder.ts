@@ -1,7 +1,16 @@
 import { heads } from "./compounds.ts";
 import type { Language } from "./language.ts";
 import { type Meanings, readMeanings } from "./meanings.ts";
-import { ask, MATCHES, type Match, partialOf, rankOf, type Spelling, spell } from "./spelling.ts";
+import {
+  ask,
+  MATCHES,
+  type Match,
+  partialOf,
+  rankOf,
+  same,
+  type Spelling,
+  spell,
+} from "./spelling.ts";
 import { variants } from "./variants.ts";
 import { words } from "./words.ts";
 
@@ -43,17 +52,18 @@ export function createFinder(
   language: Language,
   options: FinderOptions = {},
 ): Finder {
+  const stem = language.stem ?? same;
   const foods = Object.entries(names).map(([code, name]) => ({
     code,
     name,
-    spellings: variants(name).map((variant) => spell(words(variant, language))),
+    spellings: variants(name).map((variant) => spell(words(variant, language), stem)),
   }));
   // Read before the meanings join: compounds are read from the names alone.
-  const endsOf = language.compounds && compoundsOf(foods, language.compounds);
+  const endsOf = language.compounds && compoundsOf(foods, language.compounds, stem);
   const meant = readMeanings(options.meanings ?? [], language);
   for (const food of foods) {
     for (const { words: read, order } of meant.get(food.code) ?? []) {
-      food.spellings.push({ ...spell(read), meant: order });
+      food.spellings.push({ ...spell(read, stem), meant: order });
     }
   }
 
@@ -62,7 +72,7 @@ export function createFinder(
     const wanted = asked.join("").length;
     const scope = foods.filter(({ code }) => !options.group || code.startsWith(options.group));
     let hits = collect(scope, (spelled) => {
-      const rank = rankOf(asked, spelled, endsOf);
+      const rank = rankOf(asked, spelled, endsOf, stem);
       return rank < 0 ? undefined : { rank, covered: wanted, missed: [] };
     });
     // Only when no name holds the whole query: a raw material name carries words no name has
@@ -70,7 +80,7 @@ export function createFinder(
     if (hits.length === 0) {
       const read = ask(asked, endsOf);
       hits = collect(scope, (spelled) => {
-        const partial = partialOf(read, spelled, endsOf);
+        const partial = partialOf(read, spelled, endsOf, stem);
         return partial && { rank: PARTIAL, ...partial };
       });
     }
@@ -122,9 +132,13 @@ function collect(
 function compoundsOf(
   foods: { spellings: Spelling[] }[],
   rules: NonNullable<Language["compounds"]>,
+  stem: (word: string) => string,
 ): (word: string) => string[] {
+  // A word stands alone in its plural too: "Zwiebeln" makes "Speisezwiebel" a "Zwiebel".
   const known = new Set(
-    foods.flatMap((food) => food.spellings.flatMap((spelled) => spelled.words)),
+    foods.flatMap((food) =>
+      food.spellings.flatMap((spelled) => spelled.words.flatMap((word) => [word, stem(word)])),
+    ),
   );
   for (const ending of rules.endings) known.add(ending);
   const reading = { known, units: rules.units, found: new Map<string, string[]>() };

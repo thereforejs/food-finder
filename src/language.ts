@@ -11,4 +11,9 @@ export type Language = {
    * ("Buchweizen" is no "Weizen"). Without it, the language writes the kind as its own word.
    */
   compounds?: { endings: string[]; units: string[] };
+  /**
+   * A word without its plural ending, so "Zwiebel" finds "Zwiebeln" and "Tomaten" finds "Tomate".
+   * Names keep their words; the stems join them as another way to read.
+   */
+  stem?: (word: string) => string;
 };

@@ -6,6 +6,8 @@ export type Spelling = {
   spans: Set<string>;
   /** `spans` and what each compound ends with, read on the first query that needs them. */
   compounds?: Set<string>;
+  /** Every piece and where it stands, read on the first unfinished query that needs them. */
+  places?: Map<string, number[]>;
   /** A word of a meaning, not the name: the place of the food in it. */
   meant?: number;
 };
@@ -104,13 +106,42 @@ export function startOf(
   if (!covers(front, pieces, stem)) return undefined;
   const lead = front.join("").length;
   let nearest: number | undefined;
-  for (const piece of pieces) {
+  for (const [piece, places] of placesOf(name, endsOf, stem)) {
     if (!piece.startsWith(last)) continue;
-    const away =
-      Math.abs(Math.max(0, name.whole.indexOf(piece)) - lead) + piece.length - last.length;
-    if (nearest === undefined || away < nearest) nearest = away;
+    for (const at of places) {
+      const away = Math.abs(at - lead) + piece.length - last.length;
+      if (nearest === undefined || away < nearest) nearest = away;
+    }
   }
   return nearest;
+}
+
+// The pieces of `piecesOf`, each where it stands in the name: the same text may stand earlier, as
+// part of another word, and a stem nowhere.
+function placesOf(
+  name: Spelling,
+  endsOf?: (word: string) => string[],
+  stem: (word: string) => string = same,
+): Map<string, number[]> {
+  if (name.places) return name.places;
+  const places = new Map<string, number[]>();
+  const add = (piece: string, at: number) => {
+    places.set(piece, [...(places.get(piece) ?? []), at]);
+    if (stem(piece) !== piece) places.set(stem(piece), [...(places.get(stem(piece)) ?? []), at]);
+  };
+  let at = 0;
+  for (let start = 0; start < name.words.length; start++) {
+    const word = name.words[start]!;
+    let run = "";
+    for (const next of name.words.slice(start)) {
+      run += next;
+      add(run, at);
+    }
+    for (const head of endsOf?.(word) ?? []) add(head, at + word.length - head.length);
+    at += word.length;
+  }
+  name.places = places;
+  return places;
 }
 
 export type Partial = { covered: number; missed: string[] };

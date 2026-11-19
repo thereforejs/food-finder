@@ -79,7 +79,15 @@ Tiers, best first. Spaces never matter ("Weizenmehl Typ 550" is "Weizen Mehl, Ty
 | `prefix`   | the start of the name, ending at a word end                                                       | "Weizenmehl" finds "Weizen Mehl, Type 405", never "Weizenmehlschwitze" |
 | `words`    | every query word, alone or joined with neighbours, is whole words of the name in a row, any order | "Roggenmehl" is "Roggen Mehl", never part of "Roggen Vollkornmehl"     |
 | `compound` | as `words`, a query word may also be the last part of a compound (languages with compounds)       | "Butter" finds "Süßrahmbutter"                                         |
+| `start`    | as `compound`, but the last query word is the start of a name word, still being typed             | "sulta" finds "Rosine/Sultanine", "roggenmehl 11" "Type 1150"          |
 | `partial`  | as `compound`, but some query words are covered by no name word; they are in `missed`             | "Weizenmehl T550 25 kg Sack" finds "Weizen Mehl, Type 550"             |
+
+`start` serves a search field while people type. It is a fallback: it runs only when no name holds
+every query word whole, so a word that finds something is never read as unfinished ("ei" stays
+"Hühnerei", never "Eis"). Only the last word may be unfinished, from three letters or two digits:
+fewer start too many words. A name ranks by its letters between what is typed and the name: those
+before it in the name, then those still to type. "sulta" finds "Rosine/Sultanine" before "Hefezopf
+mit Sultaninen", "zim" "Zimt gemahlen" before "Zimtsterne".
 
 `partial` serves raw material names: packaging, fat content, suppliers and processing are rarely in a
 BLS name ("Weizenmehl Type 550 Sack lose"). It is a fallback: it runs only when no name holds the
@@ -93,7 +101,8 @@ whole query, so a search that finds something never changes. In it:
 - The more letters of the query a name holds, the better: "Weizenmehl" and "550" before "Weizenmehl"
   alone. Letters, not words: a longer word carries more meaning than "%" or "25".
 
-Ranking: tier, then more letters of the query found (`partial` only), then meant before not (in the
+Ranking: tier, then more letters of the query found (`partial` only), then fewer letters between
+what is typed and the name (`start` only), then meant before not (in the
 order of its meaning), then the shorter name, then `localeCompare` in the language of the finder,
 then the code.
 
@@ -171,7 +180,7 @@ The same probe on this package's build, 2026-10-29: an application built with th
    it has real ones. Real supplier and article data stays out of the repo; cases are written by hand.
 4. Properties (fast-check): words read back as themselves; a tier never ranks below a worse one;
    compounds only append after the better tiers; partial hits come only when no name holds the
-   whole query.
+   whole query; start hits come only when no name holds every word whole.
 5. Meanings: section 6.
 6. The bundle probe of section 7.
 
@@ -189,6 +198,8 @@ The same probe on this package's build, 2026-10-29: an application built with th
   (2026-10-29).
 - A compound of the query is read by its last part in `partial` ("Rindergelatine" is a "Gelatine"),
   for every language with compounds (2026-10-29).
+- `start` for a search field, a fallback before `partial` and `fuzzy`: ranked between `prefix` and
+  `words` it would put "Eis" before "Bratkartoffeln mit Ei" for a whole "ei" (2026-11-19).
 
 ---
 

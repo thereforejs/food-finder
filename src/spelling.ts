@@ -12,10 +12,19 @@ export type Spelling = {
 
 /**
  * How a hit matched the query, best first: the whole name, its start, its words, its words with a
- * word of the query as the last part of a compound ("Butter" in "Süßrahmbutter"), some words of the
- * query only, or, when nothing else is found, a mistyped word read as the nearest known one.
+ * word of the query as the last part of a compound ("Butter" in "Süßrahmbutter"), its words with the
+ * last word of the query still being typed ("sulta" for "Sultanine"), some words of the query only,
+ * or, when nothing else is found, a mistyped word read as the nearest known one.
  */
-export const MATCHES = ["exact", "prefix", "words", "compound", "partial", "fuzzy"] as const;
+export const MATCHES = [
+  "exact",
+  "prefix",
+  "words",
+  "compound",
+  "start",
+  "partial",
+  "fuzzy",
+] as const;
 
 export type Match = (typeof MATCHES)[number];
 
@@ -74,6 +83,34 @@ function startsAsStem(asked: string[], name: Spelling, stem: (word: string) => s
     if (stem(lead) === whole || leadByWord === byWord) return true;
   }
   return false;
+}
+
+/**
+ * How far a name is from what is being typed, when the last word of the query is unfinished: the
+ * letters before it in the name and the letters still to type. The other words are whole words of
+ * the name, as in `rankOf`. Undefined when the name does not hold it so.
+ */
+export function startOf(
+  asked: string[],
+  name: Spelling,
+  endsOf?: (word: string) => string[],
+  stem: (word: string) => string = same,
+): number | undefined {
+  const last = asked.at(-1);
+  // Two letters start too many words, a single digit too many numbers.
+  if (!last || !/^(\p{L}{3,}|\p{N}{2,})$/u.test(last)) return undefined;
+  const front = asked.slice(0, -1);
+  const pieces = piecesOf(name, endsOf, stem);
+  if (!covers(front, pieces, stem)) return undefined;
+  const lead = front.join("").length;
+  let nearest: number | undefined;
+  for (const piece of pieces) {
+    if (!piece.startsWith(last)) continue;
+    const away =
+      Math.abs(Math.max(0, name.whole.indexOf(piece)) - lead) + piece.length - last.length;
+    if (nearest === undefined || away < nearest) nearest = away;
+  }
+  return nearest;
 }
 
 export type Partial = { covered: number; missed: string[] };

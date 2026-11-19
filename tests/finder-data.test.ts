@@ -176,3 +176,20 @@ test("partial hits come only when no name holds the whole query", () => {
     { numRuns: 30 },
   );
 });
+
+test("an unfinished last word starts hits only when nothing else is found", () => {
+  const vocabulary = [...new Set(Object.values(names).flatMap((name) => words(name, german)))];
+  fc.assert(
+    fc.property(
+      fc.constantFrom(...vocabulary.sort()),
+      fc.integer({ min: 1, max: 12 }),
+      (word, cut) => {
+        expect(finder.search(word).some((hit) => hit.match === "start")).toBe(false);
+        const hits = finder.search(word.slice(0, cut));
+        const started = hits.filter((hit) => hit.match === "start");
+        expect(started.length === 0 || started.length === hits.length).toBe(true);
+      },
+    ),
+    { numRuns: 30 },
+  );
+});

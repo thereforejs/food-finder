@@ -49,6 +49,8 @@ You get:
   - `words`: every word of the query is a whole word of the name, any order. Singular and plural
     are one word: "Zwiebel" finds "Zwiebeln gebraten", "Tomaten" finds "Tomate roh".
   - `compound`: a word of the query is the last part of a compound: "Butter" finds "Kakaobutter".
+  - `start`: only when no name holds every word whole, the last word still being typed, from three
+    letters: "sulta" finds "Rosine/Sultanine", "butt" "Süßrahmbutter". "ei" stays "Hühnerei".
   - `partial`: only when no name holds the whole query, the names that hold the most of it. A part
     that is only a preparation ("gedünstet") or a short word ("der") is no hit.
   - `fuzzy`: only when nothing else is found, every word no name holds read as its nearest known

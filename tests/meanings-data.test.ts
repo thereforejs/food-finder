@@ -231,3 +231,38 @@ describe("a typo, when nothing else is found", () => {
     expect(de.search("Eis")[0]?.match).not.toBe("fuzzy");
   });
 });
+
+describe("an unfinished last word, when nothing else is found", () => {
+  const de = createFinder(germanNames, german, { meanings: [germanMeanings] });
+  const top = (query: string) => de.search(query, { limit: 3 });
+
+  // What a search field holds while people type: a name that starts so leads one that holds it later.
+  test.each([
+    ["sulta", "F840100", "Rosine/Sultanine (Weinbeere getrocknet)"],
+    ["butt", "Q630000", "Süßrahmbutter"],
+    ["hef", "R459000", "Backhefe frisch (Frischbackhefe)"],
+    ["zim", "R_000002", "Zimt gemahlen"],
+    ["weizenm", "C214100", "Weizen Mehl, Type 405"],
+    ["roggenmehl 11", "C223300", "Roggen Mehl, Type 1150"],
+  ])("%s leads with %s %s", (query, code) => {
+    expect(top(query)[0]?.code).toBe(code);
+    expect(top(query)[0]?.match).toBe("start");
+  });
+
+  test("a meant food leads the names that start alike", () => {
+    expect(top("butt").map((hit) => hit.name)).toEqual([
+      "Süßrahmbutter",
+      "Butter gesalzen",
+      "Butter mild gesäuert",
+    ]);
+  });
+
+  // Two letters start too many words, a single digit too many numbers.
+  test.each(["su", "zi", "roggenmehl 1"])("%s is too short to start a word", (query) => {
+    expect(de.search(query).some((hit) => hit.match === "start")).toBe(false);
+  });
+
+  test("only the last word may be unfinished", () => {
+    expect(de.search("sulta getrocknet").some((hit) => hit.match === "start")).toBe(false);
+  });
+});

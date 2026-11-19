@@ -11,6 +11,7 @@ import {
   same,
   type Spelling,
   spell,
+  startOf,
 } from "./spelling.ts";
 import { variants } from "./variants.ts";
 import { words } from "./words.ts";
@@ -97,6 +98,12 @@ export function createFinder(
     if (meant.length > 0) return unique([...meant, ...hits]);
     if (hits.length > 0) return hits;
     if (byPreparation.length > 0) return byPreparation;
+    // Only when no name holds every word whole: a word that finds something is never read as unfinished.
+    const started = collect(scope, (spelled) => {
+      const away = startOf(asked, spelled, endsOf, stem);
+      return away === undefined ? undefined : { rank: START, covered: wanted, missed: [], away };
+    });
+    if (started.length > 0) return started.sort(order);
     return partials(asked, scope).sort(order);
   }
 
@@ -205,15 +212,28 @@ export function createFinder(
   return { search };
 }
 
+const START = MATCHES.indexOf("start");
 const PARTIAL = MATCHES.indexOf("partial");
 const FUZZY = MATCHES.indexOf("fuzzy");
 
 const NOT_MEANT = Infinity;
 
-type Found = { rank: number; covered: number; missed: string[]; meant: number; length: number };
+type Found = {
+  rank: number;
+  covered: number;
+  missed: string[];
+  /** Letters between what is typed and the name (`start` only). */
+  away?: number;
+  meant: number;
+  length: number;
+};
 
 const better = (a: Found, b: Found) =>
-  a.rank - b.rank || b.covered - a.covered || a.meant - b.meant || a.length - b.length;
+  a.rank - b.rank ||
+  b.covered - a.covered ||
+  (a.away ?? 0) - (b.away ?? 0) ||
+  a.meant - b.meant ||
+  a.length - b.length;
 
 type Ranked = Found & { code: string; name: string };
 

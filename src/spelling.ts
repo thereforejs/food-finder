@@ -6,16 +6,27 @@ export type Spelling = {
   spans: Set<string>;
   /** `spans` and what each compound ends with, read on the first query that needs them. */
   compounds?: Set<string>;
+  /** Every piece and where it stands, read on the first unfinished query that needs them. */
+  places?: Map<string, number[]>;
   /** A word of a meaning, not the name: the place of the food in it. */
   meant?: number;
 };
 
 /**
  * How a hit matched the query, best first: the whole name, its start, its words, its words with a
- * word of the query as the last part of a compound ("Butter" in "Süßrahmbutter"), some words of the
- * query only, or, when nothing else is found, a mistyped word read as the nearest known one.
+ * word of the query as the last part of a compound ("Butter" in "Süßrahmbutter"), its words with the
+ * last word of the query still being typed ("sulta" for "Sultanine"), some words of the query only,
+ * or, when nothing else is found, a mistyped word read as the nearest known one.
  */
-export const MATCHES = ["exact", "prefix", "words", "compound", "partial", "fuzzy"] as const;
+export const MATCHES = [
+  "exact",
+  "prefix",
+  "words",
+  "compound",
+  "start",
+  "partial",
+  "fuzzy",
+] as const;
 
 export type Match = (typeof MATCHES)[number];
 
@@ -74,6 +85,63 @@ function startsAsStem(asked: string[], name: Spelling, stem: (word: string) => s
     if (stem(lead) === whole || leadByWord === byWord) return true;
   }
   return false;
+}
+
+/**
+ * How far a name is from what is being typed, when the last word of the query is unfinished: the
+ * letters before it in the name and the letters still to type. The other words are whole words of
+ * the name, as in `rankOf`. Undefined when the name does not hold it so.
+ */
+export function startOf(
+  asked: string[],
+  name: Spelling,
+  endsOf?: (word: string) => string[],
+  stem: (word: string) => string = same,
+): number | undefined {
+  const last = asked.at(-1);
+  // Two letters start too many words, a single digit too many numbers.
+  if (!last || !/^(\p{L}{3,}|\p{N}{2,})$/u.test(last)) return undefined;
+  const front = asked.slice(0, -1);
+  const pieces = piecesOf(name, endsOf, stem);
+  if (!covers(front, pieces, stem)) return undefined;
+  const lead = front.join("").length;
+  let nearest: number | undefined;
+  for (const [piece, places] of placesOf(name, endsOf, stem)) {
+    if (!piece.startsWith(last)) continue;
+    for (const at of places) {
+      const away = Math.abs(at - lead) + piece.length - last.length;
+      if (nearest === undefined || away < nearest) nearest = away;
+    }
+  }
+  return nearest;
+}
+
+// The pieces of `piecesOf`, each where it stands in the name: the same text may stand earlier, as
+// part of another word, and a stem nowhere.
+function placesOf(
+  name: Spelling,
+  endsOf?: (word: string) => string[],
+  stem: (word: string) => string = same,
+): Map<string, number[]> {
+  if (name.places) return name.places;
+  const places = new Map<string, number[]>();
+  const add = (piece: string, at: number) => {
+    places.set(piece, [...(places.get(piece) ?? []), at]);
+    if (stem(piece) !== piece) places.set(stem(piece), [...(places.get(stem(piece)) ?? []), at]);
+  };
+  let at = 0;
+  for (let start = 0; start < name.words.length; start++) {
+    const word = name.words[start]!;
+    let run = "";
+    for (const next of name.words.slice(start)) {
+      run += next;
+      add(run, at);
+    }
+    for (const head of endsOf?.(word) ?? []) add(head, at + word.length - head.length);
+    at += word.length;
+  }
+  name.places = places;
+  return places;
 }
 
 export type Partial = { covered: number; missed: string[] };
